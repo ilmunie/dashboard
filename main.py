@@ -17,6 +17,8 @@ def main_page():
             Page("frontend/pages/orchestration/portfolio/app.py", "Portfolio", "💰"),
             # Page("frontend/pages/orchestration/launch_bot_v2_st/app.py", "Deploy ST", "🙌"),
             # Page("pages/file_manager/app.py", "File Explorer", "🗂"),
+            Section("Backtesting", "🔬"),
+            Page("frontend/pages/orchestration/run_multiple_backtesting/app.py", "Backtest & Deploy", "🧪"),
             Section("Config Generator", "🎛️"),
             Page("frontend/pages/config/pmm_simple/app.py", "PMM Simple", "👨‍🏫"),
             Page("frontend/pages/config/pmm_dynamic/app.py", "PMM Dynamic", "👩‍🏫"),
