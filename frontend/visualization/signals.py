@@ -15,6 +15,7 @@ def get_signal_traces(buy_signals, sell_signals):
     ]
     return traces
 
+
 def get_bollinger_v1_signal_traces(df, bb_length, bb_std, bb_long_threshold, bb_short_threshold):
     # Add Bollinger Bands
     candles = df.copy()
@@ -26,6 +27,35 @@ def get_bollinger_v1_signal_traces(df, bb_length, bb_std, bb_long_threshold, bb_
 
     return get_signal_traces(buy_signals, sell_signals)
 
+
+def get_macd_mean_reversion_signal_traces(df, macd_fast, macd_slow,macd_signal):
+    tech_colors = theme.get_color_scheme()
+    # Add Bollinger Bands
+    # Add MACD
+    df.ta.macd(fast=macd_fast, slow=macd_slow, signal=macd_signal, append=True)
+    # Decision Logic
+    macdh = df[f"MACDh_{macd_fast}_{macd_slow}_{macd_signal}"]
+    macd = df[f"MACD_{macd_fast}_{macd_slow}_{macd_signal}"]
+
+    buy_signals = df[(macdh > 0) & (macd < 0)]
+    sell_signals = df[(macdh < 0) & (macd > 0)]
+
+    return get_signal_traces(buy_signals, sell_signals)
+
+
+def get_macd_trend_following_signal_traces(df, macd_fast, macd_slow,macd_signal):
+    tech_colors = theme.get_color_scheme()
+    # Add Bollinger Bands
+    # Add MACD
+    df.ta.macd(fast=macd_fast, slow=macd_slow, signal=macd_signal, append=True)
+    # Decision Logic
+    macdh = df[f"MACDh_{macd_fast}_{macd_slow}_{macd_signal}"]
+    macd = df[f"MACD_{macd_fast}_{macd_slow}_{macd_signal}"]
+
+    buy_signals = df[(macdh > 0) & (macd > 0)]
+    sell_signals = df[(macdh < 0) & (macd < 0)]
+
+    return get_signal_traces(buy_signals, sell_signals)
 
 def get_macdbb_v1_signal_traces(df, bb_length, bb_std, bb_long_threshold, bb_short_threshold, macd_fast, macd_slow,
                                 macd_signal):

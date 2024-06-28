@@ -32,6 +32,14 @@ class LaunchStrategyV2(Dashboard.Item):
         self._bot_name = None
         self._image_name = "dardonacci/hummingbot:latest"
         self._credentials = "master_account"
+        self._cash_out_time = None
+        self._max_portfolio_loss = None
+
+    def _set_cash_out_time(self, event):
+        self._cash_out_time = float(event.target.value)
+
+    def _set_max_portfolio_loss(self, event):
+        self._max_portfolio_loss = float(event.target.value)
 
     def _set_bot_name(self, event):
         self._bot_name = event.target.value
@@ -60,7 +68,8 @@ class LaunchStrategyV2(Dashboard.Item):
                     "controllers_config": self._controller_config_selected,
                     "config_update_interval": 10,
                     "script_file_name": "v2_with_controllers.py",
-                    "time_to_cash_out": None,
+                    "time_to_cash_out": self._cash_out_time,
+                    "max_portfolio_loss": self._max_portfolio_loss,
                 }
             }
 
@@ -71,6 +80,8 @@ class LaunchStrategyV2(Dashboard.Item):
                 "script_config": bot_name + ".yml",
                 "image": self._image_name,
                 "credentials_profile": self._credentials,
+                "time_to_cash_out": self._cash_out_time,
+                "max_portfolio_loss": self._max_portfolio_loss,
             }
             self._backend_api_client.create_hummingbot_instance(deploy_config)
             with st.spinner('Starting Bot... This process may take a few seconds'):
@@ -102,7 +113,7 @@ class LaunchStrategyV2(Dashboard.Item):
                 with mui.Grid(item=True, xs=4):
                     mui.TextField(label="Instance Name", variant="outlined", onChange=lazy(self._set_bot_name),
                                   sx={"width": "100%"})
-                with mui.Grid(item=True, xs=4):
+                with mui.Grid(item=True, xs=8):
                     available_images = self._backend_api_client.get_available_images("hummingbot")
                     with mui.FormControl(variant="standard", sx={"width": "100%"}):
                         mui.FormHelperText("Available Images")
@@ -110,6 +121,12 @@ class LaunchStrategyV2(Dashboard.Item):
                                         variant="standard", onChange=lazy(self._set_image_name)):
                             for image in available_images:
                                 mui.MenuItem(image, value=image)
+                with mui.Grid(item=True, xs=4):
+                    mui.TextField(label="Time to Cash-out (s)", variant="outlined", onChange=lazy(self._set_cash_out_time),
+                                    sx={"width": "100%"})
+                with mui.Grid(item=True, xs=4):
+                    mui.TextField(label="Max portfolio-loss (quote assets)", variant="outlined", onChange=lazy(self._set_max_portfolio_loss),
+                                    sx={"width": "100%"})
                 with mui.Grid(item=True, xs=4):
                     with mui.Button(onClick=self.launch_new_bot,
                                     variant="outlined",

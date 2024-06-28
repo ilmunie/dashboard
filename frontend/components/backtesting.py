@@ -20,6 +20,8 @@ def backtesting_section(inputs, backend_api_client):
         run_backtesting = st.button("Run Backtesting")
 
     if run_backtesting:
+        #TODO DELETE WHEN TRAILING_STOP CONSIDERED IN BACKTESTING
+        inputs['take_profit'] = inputs['trailing_stop']['activation_price']
         start_datetime = datetime.combine(start_date, datetime.min.time())
         end_datetime = datetime.combine(end_date, datetime.max.time())
         backtesting_results = backend_api_client.run_backtesting(

@@ -1,7 +1,6 @@
 import time
 import streamlit as st
 import pandas as pd
-
 from CONFIG import BACKEND_API_HOST, BACKEND_API_PORT
 from backend.services.backend_api_client import BackendAPIClient
 
@@ -18,6 +17,8 @@ class LaunchV2WithControllers:
         self._controller_configs_available = self._backend_api_client.get_all_controllers_config()
         self._controller_config_selected = []
         self._bot_name = None
+        self._time_to_cash_out = None
+        self._max_portfolio_loss = None
         self._image_name = "dardonacci/hummingbot:latest"
         self._credentials = "master_account"
 
@@ -29,6 +30,12 @@ class LaunchV2WithControllers:
 
     def _set_credentials(self, credentials):
         self._credentials = credentials
+
+    def _set_time_to_cash_out(self, time_to_cash_out):
+        self._time_to_cash_out = time_to_cash_out
+
+    def _set_max_portfolio_loss(self, max_portfolio_loss):
+        self._max_portfolio_loss = max_portfolio_loss
 
     def launch_new_bot(self):
         if self._bot_name and self._image_name and self._controller_config_selected:
@@ -42,7 +49,8 @@ class LaunchV2WithControllers:
                     "controllers_config": self._controller_config_selected,
                     "config_update_interval": 20,
                     "script_file_name": "v2_with_controllers.py",
-                    "time_to_cash_out": None,
+                    "time_to_cash_out": self._time_to_cash_out,
+                    "max_portfolio_loss": self._max_portfolio_loss,
                 }
             }
 
@@ -108,3 +116,10 @@ class LaunchV2WithControllers:
             deploy_button = st.button("Deploy Bot")
         if deploy_button:
             self.launch_new_bot()
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            self._max_portfolio_loss = st.text_input("Max Portfolio Loss")
+        with c2:
+            self._time_to_cash_out = st.text_input("Time To Cash Out (s)")
+
+

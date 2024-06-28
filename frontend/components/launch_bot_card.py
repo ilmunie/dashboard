@@ -86,7 +86,6 @@ class LaunchBotCard(Dashboard.Item):
                                   placeholder="hummingbot-[name]",
                                   onChange=lazy(self._set_image_name),
                                   sx={"width": "100%"})
-
                 with mui.Grid(item=True, xs=4):
                     with mui.Button(onClick=self.launch_new_bot,
                                     variant="outlined",
