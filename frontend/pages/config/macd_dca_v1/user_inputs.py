@@ -9,7 +9,7 @@ def user_inputs():
     macd_fast = default_config.get("macd_fast", 21)
     macd_slow = default_config.get("macd_slow", 42)
     macd_signal = default_config.get("macd_signal", 9)
-    max_executors_per_side = default_config.get("max_executors_per_side", 5)
+    macd_signal_type = default_config.get("macd_signal_type", "mean_reversion")
     max_executors_per_side = default_config.get("max_executors_per_side", 5)
 
     candles_connector_name = connector_name
@@ -17,6 +17,8 @@ def user_inputs():
     interval = default_config.get("interval", "3m")
     intervals = ["1m", "3m", "5m", "15m", "1h", "4h", "1d", "1s"]
     interval_index = intervals.index(interval)
+    macd_signal_types = ["mean_reversion", "trend_following"]
+    macd_signal_type_index = macd_signal_types.index(macd_signal_type)
 
     with st.expander("Custom DCA Settings", expanded=True):
         c1, c2 = st.columns(2)
@@ -36,9 +38,11 @@ def user_inputs():
         with c3:
             macd_signal = st.number_input("MACD Signal", min_value=1, value=macd_signal)
         with c4:
-            interval = st.selectbox("Interval", options=["1m", "3m", "5m", "15m", "1h", "4h", "1d", "1s"])
+            interval = st.selectbox("Interval", options=["1m", "3m", "5m", "15m", "1h", "4h", "1d", "1s"],
+                                    index=interval_index)
         with c5:
-            macd_signal_type = st.selectbox("MACD Signal type", options=["mean_reversion", "trend_following"])
+            macd_signal_type = st.selectbox("MACD Signal type", options=["mean_reversion", "trend_following"],
+                                            index=macd_signal_type_index)
 
     # Create the config
     config = {

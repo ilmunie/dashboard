@@ -18,12 +18,15 @@ def user_inputs():
     macd_slow = default_config.get("macd_slow", 42)
     macd_signal = default_config.get("macd_signal", 9)
     macd_interval = default_config.get("macd_interval", "3m")
+    macd_signal_type = default_config.get("macd_signal_type", "mean_reversion")
 
 
     max_executors_per_side = default_config.get("max_executors_per_side", 5)
     candles_connector_name = connector_name
     candles_trading_pair = trading_pair
     intervals = ["1m", "3m", "5m", "15m", "1h", "4h", "1d", "1s"]
+    macd_signal_types = ["mean_reversion", "trend_following"]
+
     interval_index = intervals.index(bb_interval)
 
     with st.expander("Other Controller Settings", expanded=True):
@@ -51,8 +54,9 @@ def user_inputs():
                                     help="Enter the interval for candles (e.g., 1m).")
 
     interval_index = intervals.index(macd_interval)
+    macd_signal_type_index = macd_signal_types.index(macd_signal_type)
     with st.expander("MACD Configuration", expanded=True):
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         with c1:
             macd_fast = st.number_input("MACD Fast", min_value=1, value=macd_fast)
         with c2:
@@ -63,6 +67,9 @@ def user_inputs():
             macd_interval = st.selectbox("MACD Candles Interval", ("1m", "3m", "5m", "15m", "1h", "4h", "1d"),
                                     index=interval_index,
                                     help="Enter the interval for candles (e.g., 1m).")
+        with c5:
+            macd_signal_type = st.selectbox("MACD Signal type", options=["mean_reversion", "trend_following"],
+                                            index=macd_signal_type_index)
 
     # Create the config
     config = {
@@ -79,6 +86,7 @@ def user_inputs():
         "macd_slow": macd_slow,
         "macd_fast": macd_fast,
         "macd_interval": macd_interval,
+        "macd_signal_type": macd_signal_type,
         "bb_interval": bb_interval,
         "bb_length": bb_length,
         "bb_std": bb_std,

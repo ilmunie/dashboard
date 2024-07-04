@@ -5,6 +5,52 @@ import plotly.graph_objects as go
 from frontend.visualization import theme
 
 
+def get_bbands_traces_mt(df, bb_length, bb_std, bb_dataframe):
+    tech_colors = theme.get_color_scheme()
+    bb_dataframe.ta.bbands(length=bb_length, std=bb_std, append=True)
+    bb_lower = f'BBL_{bb_length}_{bb_std}'
+    bb_middle = f'BBM_{bb_length}_{bb_std}'
+    bb_upper = f'BBU_{bb_length}_{bb_std}'
+    bb_dataframe['time'] = pd.to_datetime(bb_dataframe['timestamp'], unit='s')
+    df['time'] = pd.to_datetime(df['timestamp'], unit='s')
+    df = pd.merge_asof(df, bb_dataframe[['time', bb_lower, bb_middle, bb_upper]],
+                              on='time',
+                              direction='backward',)
+    df.set_index('time', inplace=True)
+
+    traces = [
+        go.Scatter(x=df.index, y=df[bb_upper], line=dict(color=tech_colors['upper_band']),
+                   name=f'Upper Band'),
+        go.Scatter(x=df.index, y=df[bb_middle], line=dict(color=tech_colors['middle_band']),
+                   name='Middle Band'),
+        go.Scatter(x=df.index, y=df[bb_lower], line=dict(color=tech_colors['lower_band']),
+                   name='Lower Band'),
+    ]
+    return traces
+
+def get_macd_traces_mt(df, macd_fast, macd_slow, macd_signal, macd_dataframe):
+    tech_colors = theme.get_color_scheme()
+    macd_dataframe.ta.macd(fast=macd_fast, slow=macd_slow, signal=macd_signal, append=True)
+    macd = f'MACD_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_s = f'MACDs_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_hist = f'MACDh_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_dataframe['time'] = pd.to_datetime(macd_dataframe['timestamp'], unit='s')
+    df['time'] = pd.to_datetime(df['timestamp'], unit='s')
+    df = pd.merge_asof(df, macd_dataframe[['time', macd, macd_s, macd_hist]],
+                       on='time',
+                       direction='backward', )
+    df.set_index('time', inplace=True)
+    traces = [
+        go.Scatter(x=df.index, y=df[macd], line=dict(color=tech_colors['macd_line']),
+                   name='MACD Line'),
+        go.Scatter(x=df.index, y=df[macd_s], line=dict(color=tech_colors['macd_signal']),
+                   name='MACD Signal'),
+        go.Bar(x=df.index, y=df[macd_hist], name='MACD Histogram',
+               marker_color=df[f"MACDh_{macd_fast}_{macd_slow}_{macd_signal}"].apply(lambda x: '#FF6347' if x < 0 else '#32CD32'))
+    ]
+    return traces
+
+
 def get_bbands_traces(df, bb_length, bb_std):
     tech_colors = theme.get_color_scheme()
     df.ta.bbands(length=bb_length, std=bb_std, append=True)

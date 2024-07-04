@@ -1,6 +1,98 @@
 from frontend.visualization import theme
 import plotly.graph_objects as go
 import pandas_ta as ta  # noqa: F401
+import pandas as pd
+
+
+def get_dca_mt_signal(df, macd_fast_1, macd_slow_1,macd_signal_1, macd_signal_type_1,
+                        macd_fast_2, macd_slow_2, macd_signal_2, macd_signal_type_2,
+                        macd_df_1, macd_df_2):
+    # Compute MACD for the first dataframe
+    macd_df_1.ta.macd(fast=macd_fast_1, slow=macd_slow_1, signal=macd_signal_1, append=True)
+    macd_1_col = f'MACD_{macd_fast_1}_{macd_slow_1}_{macd_signal_1}'
+    macd_1_h_col = f'MACDh_{macd_fast_1}_{macd_slow_1}_{macd_signal_1}'
+
+    macd_df_1['time'] = pd.to_datetime(macd_df_1['timestamp'], unit='s')
+    macd_df_1["signal_macd_1"] = 0
+
+    if macd_signal_type_1 == 'trend_following':
+        long_condition_1 = (macd_df_1[macd_1_h_col] > 0)
+        short_condition_1 = (macd_df_1[macd_1_h_col] < 0)
+    else:
+        long_condition_1 = (macd_df_1[macd_1_h_col] > 0) & (macd_df_1[macd_1_col] < 0)
+        short_condition_1 = (macd_df_1[macd_1_h_col] < 0) & (macd_df_1[macd_1_col] > 0)
+
+    macd_df_1.loc[long_condition_1, "signal_macd_1"] = 1
+    macd_df_1.loc[short_condition_1, "signal_macd_1"] = -1
+
+    # Compute MACD for the second dataframe
+    macd_df_2.ta.macd(fast=macd_fast_2, slow=macd_slow_2, signal=macd_signal_2, append=True)
+    macd_2_col = f'MACD_{macd_fast_2}_{macd_slow_2}_{macd_signal_2}'
+    macd_2_h_col = f'MACDh_{macd_fast_2}_{macd_slow_2}_{macd_signal_2}'
+
+    macd_df_2['time'] = pd.to_datetime(macd_df_2['timestamp'], unit='s')
+    macd_df_2["signal_macd_2"] = 0
+
+    if macd_signal_type_2 == 'trend_following':
+        long_condition_2 = (macd_df_2[macd_2_h_col] > 0)
+        short_condition_2 = (macd_df_2[macd_2_h_col] < 0)
+    else:
+        long_condition_2 = (macd_df_2[macd_2_h_col] > 0) & (macd_df_2[macd_2_col] < 0)
+        short_condition_2 = (macd_df_2[macd_2_h_col] < 0) & (macd_df_2[macd_2_col] > 0)
+
+    macd_df_2.loc[long_condition_2, "signal_macd_2"] = 1
+    macd_df_2.loc[short_condition_2, "signal_macd_2"] = -1
+
+    # Merge DataFrames on timestamp
+    df['time'] = pd.to_datetime(df['timestamp'], unit='s')
+    df = pd.merge_asof(df, macd_df_1[['time', 'signal_macd_1']], on='time', direction='backward')
+    df = pd.merge_asof(df, macd_df_2[['time', 'signal_macd_2']], on='time', direction='backward')
+    df.set_index('time', inplace=True)
+
+    # Compute final signal
+    df["signal"] = df.apply(
+        lambda row: row['signal_macd_1'] if row['signal_macd_1'] == row['signal_macd_2'] else 0, axis=1)
+
+    # Define buy and sell signals
+    buy_signals = df[df['signal'] == 1]
+    sell_signals = df[df['signal'] == -1]
+
+    return get_signal_traces(buy_signals, sell_signals)
+
+def get_bollinger_dca_mt_signal(df, bb_length, bb_std, bb_long_threshold, bb_short_threshold, macd_fast, macd_slow,
+                                macd_signal, macd_signal_type, macd_df, bb_df):
+    tech_colors = theme.get_color_scheme()
+    df['time'] = pd.to_datetime(df['timestamp'], unit='s')
+    bb_df.ta.bbands(length=bb_length, std=bb_std, append=True)
+    bb_df['time'] = pd.to_datetime(bb_df['timestamp'], unit='s')
+    bbp_col = f'BBP_{bb_length}_{bb_std}'
+
+    macd_df.ta.macd(fast=macd_fast, slow=macd_slow, signal=macd_signal, append=True)
+    macd_col = f'MACD_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_s_col = f'MACDs_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_h_col = f'MACDh_{macd_fast}_{macd_slow}_{macd_signal}'
+    macd_df['time'] = pd.to_datetime(macd_df['timestamp'], unit='s')
+    df['time'] = pd.to_datetime(df['timestamp'], unit='s')
+
+    df = pd.merge_asof(df, macd_df[['time', macd_col, macd_s_col, macd_h_col]],
+                       on='time',
+                       direction='backward', )
+    df = pd.merge_asof(df, bb_df[['time', bbp_col]],
+                       on='time',
+                       direction='backward', )
+    df.set_index('time', inplace=True)
+    bbp = df[bbp_col]
+    macdh = df[macd_h_col]
+    macd = df[macd_col]
+
+    if macd_signal_type == 'trend_following':
+        buy_signals = df[(bbp < bb_long_threshold) & (macdh > 0) & (macd < 0)]
+        sell_signals = df[(bbp > bb_short_threshold) & (macdh < 0) & (macd > 0)]
+    else:
+        buy_signals = df[(bbp < bb_long_threshold) & (macdh > 0) & (macd < 0)]
+        sell_signals = df[(bbp > bb_short_threshold) & (macdh < 0) & (macd > 0)]
+    return get_signal_traces(buy_signals, sell_signals)
+
 
 
 def get_signal_traces(buy_signals, sell_signals):
