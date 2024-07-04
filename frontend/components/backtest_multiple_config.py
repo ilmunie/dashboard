@@ -286,6 +286,7 @@ class RunMultipleBacktesting(Dashboard.Item):
                                     rowsPerPageOptions=[15],
                                     checkboxSelection=True,
                                     disableSelectionOnClick=True,
+                                    GRID_CHECKBOX_SELECTION_COL_DEF=self._result_config_selected,
                                     onSelectionModelChange=self._handle_config_selected,
                                 )
         if self._result_config_selected:
