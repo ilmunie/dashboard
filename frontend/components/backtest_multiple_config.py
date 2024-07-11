@@ -204,7 +204,7 @@ class RunMultipleBacktesting(Dashboard.Item):
                             "Select the controllers to backtest",
                             severity="info")
                     with mui.Grid(item=True, xs=4):
-                        with mui.Button(onClick=self.run_backtestings,
+                        with mui.Button(onTouch=self.run_backtestings, onClick=self.run_backtestings,
                                         variant="outlined",
                                         color="success",
                                         sx={"width": "100%", "height": "100%"}):
@@ -291,7 +291,7 @@ class RunMultipleBacktesting(Dashboard.Item):
                                       onChange=lazy(self._set_max_portfolio_loss),
                                       sx={"width": "100%"})
                     with mui.Grid(item=True, xs=4):
-                        with mui.Button(onClick=self.launch_new_bot,
+                        with mui.Button(onTouch=self.launch_new_bot, onClick=self.launch_new_bot,
                                         variant="outlined",
                                         color="success",
                                         sx={"width": "100%", "height": "100%"}):
@@ -335,10 +335,4 @@ class RunMultipleBacktesting(Dashboard.Item):
                         st.write("---")
                         render_close_types(tuple[1]["results"])
 
-
-                #result = tuple[1]
-
-                #st.write(f"### Analyzing Backtesting result: `{result_id}`")
-                #st.write("#### Analysis")
-                #st.write(result["results"])
 
