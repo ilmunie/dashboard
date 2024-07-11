@@ -1,5 +1,4 @@
 import time
-
 import streamlit as st
 from streamlit_elements import mui, lazy
 from datetime import datetime, timedelta
@@ -56,77 +55,94 @@ class RunMultipleBacktesting(Dashboard.Item):
         super().__init__(*args, **kwargs)
         self._backend_api_client = BackendAPIClient.get_instance(host=BACKEND_API_HOST, port=BACKEND_API_PORT)
         self._controller_configs_available = self._backend_api_client.get_all_controllers_config()
-        self._controller_config_selected = None
-        self._result_config_selected = None
-        self._start_date = None
-        self._end_date = None
-        self._time_resolution = None
-        self._trade_cost = None
-        self._backtesting_results = []
-        self._bot_name = None
-        self._image_name = "dardonacci/hummingbot:latest"
-        self._credentials = "master_account"
-        self._cash_out_time = None
-        self._max_portfolio_loss = None
+        if 'controller_config_selected' not in st.session_state:
+            st.session_state.controller_config_selected = None
+        if 'result_config_selected' not in st.session_state:
+            st.session_state.result_config_selected = None
+        if 'start_date' not in st.session_state:
+            st.session_state.start_date = datetime.now().date() - timedelta(days=2)
+        if 'end_date' not in st.session_state:
+            st.session_state.end_date = datetime.now().date() - timedelta(days=1)
+        if 'time_resolution' not in st.session_state:
+            st.session_state.time_resolution = None
+        if 'trade_cost' not in st.session_state:
+            st.session_state.trade_cost = 0.06
+        if 'backtesting_results' not in st.session_state:
+            st.session_state.backtesting_results = []
+        if 'bot_name' not in st.session_state:
+            st.session_state.bot_name = None
+        if 'image_name' not in st.session_state:
+            st.session_state.image_name = "dardonacci/hummingbot:latest"
+        if 'credentials' not in st.session_state:
+            st.session_state.credentials = "master_account"
+        if 'cash_out_time' not in st.session_state:
+            st.session_state.cash_out_time = None
+        if 'max_portfolio_loss' not in st.session_state:
+            st.session_state.max_portfolio_loss = None
 
     def _set_bot_name(self, event):
-        self._bot_name = event.target.value
+        st.session_state.bot_name = event.target.value
 
     def _set_image_name(self, _, childs):
-        self._image_name = childs.props.value
+        st.session_state.image_name = childs.props.value
 
     def _set_credentials(self, _, childs):
-        self._credentials = childs.props.value
+        st.session_state.credentials = childs.props.value
 
     def _set_cash_out_time(self, event):
-        self._cash_out_time = float(event.target.value)
+        st.session_state.cash_out_time = float(event.target.value)
 
     def _set_max_portfolio_loss(self, event):
-        self._max_portfolio_loss = float(event.target.value)
+        st.session_state.max_portfolio_loss = float(event.target.value)
+
     def _set_backtesting_resolution(self, event):
-        self._backtesting_resolution = event.target.value
+        st.session_state.time_resolution = event.target.value
 
     def _set_controller(self, event):
-        self._controller_selected = event.target.value
+        st.session_state.controller_selected = event.target.value
+
     def _handle_config_selected(self, params, _):
-        self._result_config_selected = [param + "" for param in params]
+        st.session_state.result_config_selected = [param + "" for param in params]
+
     def _handle_row_selection(self, params, _):
-        self._controller_config_selected = [param + "" for param in params]
+        st.session_state.controller_config_selected = [param + "" for param in params]
+
     def run_backtestings(self):
-            results = []
-            if not self._controller_config_selected:
-                st.error("No configs selected!")
-                return None
-            all_controllers = self._backend_api_client.get_all_controllers_config()
-            selected_controllers = [controller for controller in all_controllers if
-                                    controller['id'] in self._controller_config_selected]
-            start_datetime = datetime.combine(self._start_date, datetime.min.time())
-            end_datetime = datetime.combine(self._end_date, datetime.max.time())
-            for controller in selected_controllers:
-                results.append((controller, self._backend_api_client.run_backtesting(
+        results = []
+        if not st.session_state.controller_config_selected:
+            st.error("No configs selected!")
+            return None
+        all_controllers = self._backend_api_client.get_all_controllers_config()
+        selected_controllers = [controller for controller in all_controllers if
+                                controller['id'] in st.session_state.controller_config_selected]
+        start_datetime = datetime.combine(st.session_state.start_date, datetime.min.time())
+        end_datetime = datetime.combine(st.session_state.end_date, datetime.max.time())
+        for controller in selected_controllers:
+            results.append((controller, self._backend_api_client.run_backtesting(
                 start_time=int(start_datetime.timestamp()) * 1000,
                 end_time=int(end_datetime.timestamp()) * 1000,
-                backtesting_resolution=self._time_resolution,
-                trade_cost=self._trade_cost / 100,
-                config=controller,)))
-            self._backtesting_results = results
-            with st.spinner('Starting Backtesting... This process may take a few seconds'):
-                time.sleep(3)
+                backtesting_resolution=st.session_state.time_resolution,
+                trade_cost=st.session_state.trade_cost / 100,
+                config=controller, )))
+        st.session_state.backtesting_results = results
+        with st.spinner('Starting Backtesting... This process may take a few seconds'):
+            time.sleep(3)
 
     def launch_new_bot(self):
-        if self._bot_name and self._image_name and len(self._controller_config_selected) > 0:
+        if st.session_state.bot_name and st.session_state.image_name and len(
+                st.session_state.controller_config_selected) > 0:
             start_time_str = time.strftime("%Y.%m.%d_%H.%M")
-            bot_name = f"{self._bot_name}-{start_time_str}"
+            bot_name = f"{st.session_state.bot_name}-{start_time_str}"
             script_config = {
                 "name": bot_name,
                 "content": {
                     "markets": {},
                     "candles_config": [],
-                    "controllers_config": [name_id + ".yml" for name_id in self._result_config_selected],
+                    "controllers_config": [name_id + ".yml" for name_id in st.session_state.result_config_selected],
                     "config_update_interval": 10,
                     "script_file_name": "v2_with_controllers.py",
-                    "time_to_cash_out": self._cash_out_time,
-                    "max_portfolio_loss": self._max_portfolio_loss,
+                    "time_to_cash_out": st.session_state.cash_out_time,
+                    "max_portfolio_loss": st.session_state.max_portfolio_loss,
                 }
             }
             self._backend_api_client.add_script_config(script_config)
@@ -134,10 +150,10 @@ class RunMultipleBacktesting(Dashboard.Item):
                 "instance_name": bot_name,
                 "script": "v2_with_controllers.py",
                 "script_config": bot_name + ".yml",
-                "image": self._image_name,
-                "credentials_profile": self._credentials,
-                "time_to_cash_out": self._cash_out_time,
-                "max_portfolio_loss": self._max_portfolio_loss,
+                "image": st.session_state.image_name,
+                "credentials_profile": st.session_state.credentials,
+                "time_to_cash_out": st.session_state.cash_out_time,
+                "max_portfolio_loss": st.session_state.max_portfolio_loss,
             }
             self._backend_api_client.create_hummingbot_instance(deploy_config)
             with st.spinner('Starting Bot... This process may take a few seconds'):
@@ -146,29 +162,40 @@ class RunMultipleBacktesting(Dashboard.Item):
             st.warning("You need to define the bot name and select the controllers configs "
                        "that you want to deploy.")
 
-
-
     def __call__(self):
+        # Initialize session state variables if they don't exist
+        if 'start_date' not in st.session_state:
+            st.session_state.start_date = datetime.now().date() - timedelta(days=2)
+        if 'end_date' not in st.session_state:
+            st.session_state.end_date = datetime.now().date() - timedelta(days=1)
+        if 'time_resolution' not in st.session_state:
+            st.session_state.time_resolution = "1m"
+        if 'trade_cost' not in st.session_state:
+            st.session_state.trade_cost = 0.06
+        if 'controller_config_selected' not in st.session_state:
+            st.session_state.controller_config_selected = []
+        if 'backtesting_results' not in st.session_state:
+            st.session_state.backtesting_results = []
 
         st.write("### Backtesting")
         c1, c2, c3, c4 = st.columns(4)
-        default_end_time = datetime.now().date() - timedelta(days=1)
-        default_start_time = default_end_time - timedelta(days=2)
-        disabled = True if self._backtesting_results else False
+        disabled = True if st.session_state.backtesting_results else False
         with c1:
-            self._start_date = st.date_input("Start Date", default_start_time, disabled=disabled)
+            st.session_state.start_date = st.date_input("Start Date", st.session_state.start_date, disabled=disabled)
         with c2:
-            self._end_date = st.date_input("End Date", default_end_time, disabled=disabled,
-                                     help="End date is inclusive, make sure that you are not including the current date.")
+            st.session_state.end_date = st.date_input("End Date", st.session_state.end_date, disabled=disabled,
+                                                      help="End date is inclusive, make sure that you are not including the current date.")
         with c3:
-            self._time_resolution = st.selectbox("Backtesting Resolution", disabled=disabled,
-                                                  options=["1m", "3m", "5m", "15m", "30m", "1h", "1s"], index=0)
+            st.session_state.time_resolution = st.selectbox("Backtesting Resolution", disabled=disabled,
+                                                            options=["1m", "3m", "5m", "15m", "30m", "1h", "1s"],
+                                                            index=0)
         with c4:
-            self._trade_cost = st.number_input("Trade Cost (%)", min_value=0.0, disabled=disabled, value=0.06, step=0.01, format="%.2f")
-        if not self._backtesting_results:
+            st.session_state.trade_cost = st.number_input("Trade Cost (%)", min_value=0.0, disabled=disabled,
+                                                          value=st.session_state.trade_cost, step=0.01, format="%.2f")
+        if not st.session_state.backtesting_results:
             with mui.Paper(key=self._key,
                            sx={"display": "flex", "flexDirection": "column", "borderRadius": 3, "overflow": "hidden"},
-                           elevation=1 ):
+                           elevation=1):
                 with self.title_bar(padding="10px 15px 10px 15px", dark_switcher=False):
                     mui.Typography("🚀 Select the controller configs to backtest", variant="h5")
                 with mui.Grid(container=True, spacing=2, sx={"padding": "10px 15px 10px 15px"}):
@@ -219,9 +246,9 @@ class RunMultipleBacktesting(Dashboard.Item):
                                     disableSelectionOnClick=True,
                                     onSelectionModelChange=self._handle_row_selection,
                                 )
-        if self._backtesting_results:
+        if st.session_state.backtesting_results:
             data = []
-            for tuple in self._backtesting_results:
+            for tuple in st.session_state.backtesting_results:
                 config = tuple[0]
                 result = tuple[1]
                 data.append(result["results"] | {'id': config['id']})
@@ -271,27 +298,29 @@ class RunMultipleBacktesting(Dashboard.Item):
                             mui.icon.AddCircleOutline()
                             mui.Typography("Deploy")
 
-                #with mui.Grid(container=True, spacing=2, sx={"padding": "10px 15px 10px 15px"}):
-                    with mui.Grid(item=True, xs=12):
-                        mui.Alert("Select a backtesting to analyse and deploy", severity="info")
-                        with mui.Paper(key=self._key,
-                                       sx={"display": "flex", "flexDirection": "column", "borderRadius": 3,
-                                           "overflow": "hidden", "height": 1000},
-                                       elevation=1):
-                            with mui.Box(sx={"flex": 1, "minHeight": 3}):
-                                mui.DataGrid(
-                                    columns=self.DEFAULT_RESULT_COLUMNS,
-                                    rows=data,
-                                    pageSize=15,
-                                    rowsPerPageOptions=[15],
-                                    checkboxSelection=True,
-                                    disableSelectionOnClick=True,
-                                    GRID_CHECKBOX_SELECTION_COL_DEF=self._result_config_selected,
-                                    onSelectionModelChange=self._handle_config_selected,
-                                )
-        if self._result_config_selected:
-            for result_id in self._result_config_selected:
-                tuple = next(filter(lambda tup: tup[0]['id'] == result_id, self._backtesting_results), None)
+                    with mui.Grid(container=True, spacing=2, sx={"padding": "10px 15px 10px 15px"}):
+                        with mui.Grid(item=True, xs=12):
+                            mui.Alert("Select a backtesting to analyse and deploy", severity="info")
+                            with mui.Paper(key=self._key,
+                                           sx={"display": "flex", "flexDirection": "column", "borderRadius": 3,
+                                               "overflow": "hidden", "height": 1000},
+                                           elevation=1):
+                                with mui.Box(sx={"flex": 1, "minHeight": 3}):
+                                    mui.DataGrid(
+                                        columns=self.DEFAULT_RESULT_COLUMNS,
+                                        rows=data,
+                                        pageSize=15,
+                                        rowsPerPageOptions=[15],
+                                        checkboxSelection=True,
+                                        disableSelectionOnClick=True,
+                                        GRID_CHECKBOX_SELECTION_COL_DEF=st.session_state.result_config_selected,
+                                        onSelectionModelChange=self._handle_config_selected,
+                                    )
+        if st.session_state.result_config_selected:
+            for result_id in st.session_state.result_config_selected:
+                tuple = next(filter(lambda tup: tup[0]['id'] == result_id, st.session_state.backtesting_results), None)
+                if not tuple:
+                    continue
                 fig = create_backtesting_figure(
                     df=tuple[1]["processed_data"],
                     executors=tuple[1]["executors"],
@@ -305,4 +334,11 @@ class RunMultipleBacktesting(Dashboard.Item):
                         render_accuracy_metrics(tuple[1]["results"])
                         st.write("---")
                         render_close_types(tuple[1]["results"])
+
+
+                #result = tuple[1]
+
+                #st.write(f"### Analyzing Backtesting result: `{result_id}`")
+                #st.write("#### Analysis")
+                #st.write(result["results"])
 
