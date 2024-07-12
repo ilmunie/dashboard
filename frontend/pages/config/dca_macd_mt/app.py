@@ -61,8 +61,8 @@ candles_macd_2 = get_candles(connector_name=inputs["candles_connector"], trading
 
 
 add_traces_to_fig(fig, [get_candlestick_trace(candles)], row=1, col=1)
-add_traces_to_fig(fig, get_dca_mt_signal(df=candles, macd_fast_1=inputs["macd_fast_1"], macd_slow_1=inputs["macd_slow_1"], macd_signal_1=inputs["macd_signal_1"], macd_signal_type_1=inputs["macd_signal_type_1"],
-                                            macd_fast_2=inputs["macd_fast_2"],macd_slow_2=inputs["macd_slow_2"],macd_signal_2=inputs["macd_signal_2"],macd_signal_type_2=inputs["macd_signal_type_2"],
+add_traces_to_fig(fig, get_dca_mt_signal(df=candles, macd_fast_1=inputs["macd_fast_1"], macd_slow_1=inputs["macd_slow_1"], macd_signal_1=inputs["macd_signal_1"], macd_signal_type_1=inputs["macd_signal_type_1"], number_of_candles_1=inputs["macd_number_of_candles_1"],
+                                            macd_fast_2=inputs["macd_fast_2"],macd_slow_2=inputs["macd_slow_2"],macd_signal_2=inputs["macd_signal_2"],macd_signal_type_2=inputs["macd_signal_type_2"], number_of_candles_2=inputs["macd_number_of_candles_2"],
                                             macd_df_1=candles_macd_1, macd_df_2=candles_macd_2),
                   row=1, col=1)
 add_traces_to_fig(fig, get_macd_traces_mt(df=candles, macd_fast=inputs["macd_fast_1"], macd_slow=inputs["macd_slow_1"],

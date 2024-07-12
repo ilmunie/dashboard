@@ -4,59 +4,87 @@ import pandas_ta as ta  # noqa: F401
 import pandas as pd
 
 
-def get_dca_mt_signal(df, macd_fast_1, macd_slow_1,macd_signal_1, macd_signal_type_1,
-                        macd_fast_2, macd_slow_2, macd_signal_2, macd_signal_type_2,
+def get_dca_mt_signal(df, macd_fast_1, macd_slow_1,macd_signal_1, macd_signal_type_1, number_of_candles_1,
+                        macd_fast_2, macd_slow_2, macd_signal_2, macd_signal_type_2, number_of_candles_2,
                         macd_df_1, macd_df_2):
+
+    # Define a function to check macd special the conditions
+    def check_increasing(series, number_of_candles):
+        # Check if the series has 3 consecutive increasing values
+        return (series.iloc[-number_of_candles] <= series.iloc[-1])
+    def check_decreasing(series, number_of_candles):
+        # Check if the series has 3 consecutive increasing values
+        return (series.iloc[-number_of_candles] >= series.iloc[-1])
+
     # Compute MACD for the first dataframe
     macd_df_1.ta.macd(fast=macd_fast_1, slow=macd_slow_1, signal=macd_signal_1, append=True)
+    # NAME OF COLUMNS
     macd_1_col = f'MACD_{macd_fast_1}_{macd_slow_1}_{macd_signal_1}'
     macd_1_h_col = f'MACDh_{macd_fast_1}_{macd_slow_1}_{macd_signal_1}'
-
+    #ADD TIME COLUMN TO MERGE
     macd_df_1['time'] = pd.to_datetime(macd_df_1['timestamp'], unit='s')
+    #SET MACD SIGNAL
     macd_df_1["signal_macd_1"] = 0
-
-    if macd_signal_type_1 == 'trend_following':
-        long_condition_1 = (macd_df_1[macd_1_h_col] > 0)
-        short_condition_1 = (macd_df_1[macd_1_h_col] < 0)
-    else:
+    #SET MACD_SIGNAL BASED ON SIGNAL TYPE mean_reversion_1 - trend_following - mean_reversion_2
+    if macd_signal_type_1 == 'mean_reversion_1':
         long_condition_1 = (macd_df_1[macd_1_h_col] > 0) & (macd_df_1[macd_1_col] < 0)
         short_condition_1 = (macd_df_1[macd_1_h_col] < 0) & (macd_df_1[macd_1_col] > 0)
+        macd_df_1.loc[long_condition_1, "signal_macd_1"] = 1
+        macd_df_1.loc[short_condition_1, "signal_macd_1"] = -1
+    else:
+        macd_df_1["diff_macd_1"] = 0
+        increasing_condition_1 = macd_df_1[macd_1_h_col].rolling(window=number_of_candles_1).apply(
+            lambda x: check_increasing(x, number_of_candles_1), raw=False).fillna(0).astype(int)
+        decreasing_condition_1 = macd_df_1[macd_1_h_col].rolling(window=number_of_candles_1).apply(
+            lambda x: check_decreasing(x, number_of_candles_1), raw=False).fillna(0).astype(int)
+        macd_df_1.loc[increasing_condition_1.astype(bool), 'diff_macd_1'] = 1
+        macd_df_1.loc[decreasing_condition_1.astype(bool), 'diff_macd_1'] = -1
+        if macd_signal_type_1 == 'trend_following':
+            macd_df_1['signal_macd_1'] = macd_df_1['diff_macd_1']
+        else:
+            long_condition_1 = (macd_df_1['diff_macd_1'] > 0) & (macd_df_1[macd_1_col] < 0)
+            short_condition_1 = (macd_df_1['diff_macd_1'] < 0) & (macd_df_1[macd_1_col] > 0)
+            macd_df_1.loc[long_condition_1, "signal_macd_1"] = 1
+            macd_df_1.loc[short_condition_1, "signal_macd_1"] = -1
 
-    macd_df_1.loc[long_condition_1, "signal_macd_1"] = 1
-    macd_df_1.loc[short_condition_1, "signal_macd_1"] = -1
-
-    # Compute MACD for the second dataframe
+   #same to macd 2
     macd_df_2.ta.macd(fast=macd_fast_2, slow=macd_slow_2, signal=macd_signal_2, append=True)
     macd_2_col = f'MACD_{macd_fast_2}_{macd_slow_2}_{macd_signal_2}'
     macd_2_h_col = f'MACDh_{macd_fast_2}_{macd_slow_2}_{macd_signal_2}'
-
     macd_df_2['time'] = pd.to_datetime(macd_df_2['timestamp'], unit='s')
     macd_df_2["signal_macd_2"] = 0
-
-    if macd_signal_type_2 == 'trend_following':
-        long_condition_2 = (macd_df_2[macd_2_h_col] > 0)
-        short_condition_2 = (macd_df_2[macd_2_h_col] < 0)
-    else:
+    if macd_signal_type_2 == 'mean_reversion_2':
         long_condition_2 = (macd_df_2[macd_2_h_col] > 0) & (macd_df_2[macd_2_col] < 0)
         short_condition_2 = (macd_df_2[macd_2_h_col] < 0) & (macd_df_2[macd_2_col] > 0)
-
-    macd_df_2.loc[long_condition_2, "signal_macd_2"] = 1
-    macd_df_2.loc[short_condition_2, "signal_macd_2"] = -1
+        macd_df_2.loc[long_condition_2, "signal_macd_2"] = 1
+        macd_df_2.loc[short_condition_2, "signal_macd_2"] = -1
+    else:
+        macd_df_2["diff_macd_2"] = 0
+        increasing_condition_2 = macd_df_2[macd_2_h_col].rolling(window=number_of_candles_2).apply(
+            lambda x: check_increasing(x, number_of_candles_2), raw=False).fillna(0).astype(int)
+        decreasing_condition_2 = macd_df_2[macd_2_h_col].rolling(window=number_of_candles_2).apply(
+            lambda x: check_decreasing(x, number_of_candles_2), raw=False).fillna(0).astype(int)
+        macd_df_2.loc[increasing_condition_2.astype(bool), 'diff_macd_2'] = 1
+        macd_df_2.loc[decreasing_condition_2.astype(bool), 'diff_macd_2'] = -1
+        if macd_signal_type_2 == 'trend_following':
+            macd_df_2['signal_macd_2'] = macd_df_2['diff_macd_2']
+        else:
+            long_condition_2 = (macd_df_2['diff_macd_2'] > 0) & (macd_df_2[macd_2_col] < 0)
+            short_condition_2 = (macd_df_2['diff_macd_2'] < 0) & (macd_df_2[macd_2_col] > 0)
+            macd_df_2.loc[long_condition_2, "signal_macd_2"] = 1
+            macd_df_2.loc[short_condition_2, "signal_macd_2"] = -1
 
     # Merge DataFrames on timestamp
     df['time'] = pd.to_datetime(df['timestamp'], unit='s')
     df = pd.merge_asof(df, macd_df_1[['time', 'signal_macd_1']], on='time', direction='backward')
     df = pd.merge_asof(df, macd_df_2[['time', 'signal_macd_2']], on='time', direction='backward')
     df.set_index('time', inplace=True)
-
     # Compute final signal
     df["signal"] = df.apply(
         lambda row: row['signal_macd_1'] if row['signal_macd_1'] == row['signal_macd_2'] else 0, axis=1)
-
     # Define buy and sell signals
     buy_signals = df[df['signal'] == 1]
     sell_signals = df[df['signal'] == -1]
-
     return get_signal_traces(buy_signals, sell_signals)
 
 def get_bollinger_dca_mt_signal(df, bb_length, bb_std, bb_long_threshold, bb_short_threshold, macd_fast, macd_slow,
