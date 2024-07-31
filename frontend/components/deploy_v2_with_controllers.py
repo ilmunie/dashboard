@@ -1,8 +1,10 @@
 import time
-import streamlit as st
+
 import pandas as pd
 from CONFIG import BACKEND_API_HOST, BACKEND_API_PORT
 from backend.services.backend_api_client import BackendAPIClient
+import streamlit as st
+from frontend.st_utils import get_backend_api_client
 
 
 class LaunchV2WithControllers:
@@ -13,7 +15,7 @@ class LaunchV2WithControllers:
     ]
 
     def __init__(self):
-        self._backend_api_client = BackendAPIClient.get_instance(host=BACKEND_API_HOST, port=BACKEND_API_PORT)
+        self._backend_api_client = get_backend_api_client()
         self._controller_configs_available = self._backend_api_client.get_all_controllers_config()
         self._controller_config_selected = []
         self._bot_name = None
@@ -100,7 +102,8 @@ class LaunchV2WithControllers:
 
         edited_df = st.data_editor(df, hide_index=True)
 
-        self._controller_config_selected = [f"{config}.yml" for config in edited_df[edited_df["selected"]]["id"].tolist()]
+        self._controller_config_selected = [f"{config}.yml" for config in
+                                            edited_df[edited_df["selected"]]["id"].tolist()]
         st.write(self._controller_config_selected)
         c1, c2, c3, c4 = st.columns([1, 1, 1, 0.3])
         with c1:
@@ -121,5 +124,6 @@ class LaunchV2WithControllers:
             self._max_portfolio_loss = st.text_input("Max Portfolio Loss")
         with c2:
             self._time_to_cash_out = st.text_input("Time To Cash Out (s)")
+
 
 

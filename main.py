@@ -139,3 +139,4 @@ main_page()
 #     st.write("---")
 #     st.write("If you are pre-authorized, you can login with your pre-authorized mail!")
 #     st.session_state.authenticator.register_user(location='main')  # Updated register user call
+

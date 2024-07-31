@@ -38,6 +38,7 @@ def render_accuracy_metrics(summary_results):
     st.metric(label="Accuracy Long", value=f"{accuracy_long:.2%}")
     st.metric(label="Accuracy Short", value=f"{accuracy_short:.2%}")
 
+
 def render_accuracy_metrics2(summary_results):
     accuracy = summary_results.get('accuracy', 0)
     total_long = summary_results.get('total_long', 0)
@@ -58,6 +59,7 @@ def render_close_types(summary_results):
     st.write("#### Close Types")
     close_types = summary_results.get('close_types', {})
     st.metric(label="TAKE PROFIT", value=f"{close_types.get('TAKE_PROFIT', 0)}")
+    st.metric(label="TRAILING STOP", value=f"{close_types.get('TRAILING_STOP', 0)}")
     st.metric(label="STOP LOSS", value=f"{close_types.get('STOP_LOSS', 0)}")
     st.metric(label="TIME LIMIT", value=f"{close_types.get('TIME_LIMIT', 0)}")
     st.metric(label="EARLY STOP", value=f"{close_types.get('EARLY_STOP', 0)}")

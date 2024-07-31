@@ -1,8 +1,7 @@
-from frontend.visualization import theme
-import plotly.graph_objects as go
 import pandas_ta as ta  # noqa: F401
 import pandas as pd
-
+import plotly.graph_objects as go
+from frontend.visualization import theme
 
 def get_dca_mt_signal(df, macd_fast_1, macd_slow_1,macd_signal_1, macd_signal_type_1, number_of_candles_1,
                         macd_fast_2, macd_slow_2, macd_signal_2, macd_signal_type_2, number_of_candles_2,
@@ -123,6 +122,7 @@ def get_bollinger_dca_mt_signal(df, bb_length, bb_std, bb_long_threshold, bb_sho
 
 
 
+
 def get_signal_traces(buy_signals, sell_signals):
     tech_colors = theme.get_color_scheme()
     traces = [
@@ -179,7 +179,6 @@ def get_macd_trend_following_signal_traces(df, macd_fast, macd_slow,macd_signal)
 
 def get_macdbb_v1_signal_traces(df, bb_length, bb_std, bb_long_threshold, bb_short_threshold, macd_fast, macd_slow,
                                 macd_signal):
-    tech_colors = theme.get_color_scheme()
     # Add Bollinger Bands
     df.ta.bbands(length=bb_length, std=bb_std, append=True)
     # Add MACD
